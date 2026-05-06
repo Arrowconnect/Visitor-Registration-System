@@ -86,9 +86,10 @@
   .topbar-meta {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     font-size: 13px;
     color: var(--ink-soft);
+    flex-wrap: wrap;
   }
 
   .datetime { font-variant-numeric: tabular-nums; }
@@ -118,6 +119,63 @@
     background: #fff;
     color: var(--arrow-red);
     box-shadow: var(--shadow-sm);
+  }
+
+  /* Mode switch (Visitor vs Inspection & Loading) */
+  .mode-switch {
+    display: flex;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .mode-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .mode-btn:hover {
+    color: var(--ink);
+  }
+
+  .mode-btn.active {
+    background: var(--ink);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+
+  .mode-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Inspection mode accent — switches the main red to a blue accent */
+  body.mode-inspection {
+    --arrow-red: #1A6FD9;
+    --arrow-red-dark: #0E5BB8;
+    --arrow-red-light: #E6EFFB;
+  }
+  body.mode-inspection .accent-strip {
+    background: linear-gradient(to right,
+      #1A6FD9 0%, #1A6FD9 45%,
+      #1A1A1A 45%, #1A1A1A 55%,
+      #1A6FD9 55%, #1A6FD9 100%);
   }
 
   /* Accent strip below top bar */
@@ -680,6 +738,16 @@
     </div>
   </div>
   <div class="topbar-meta">
+    <div class="mode-switch" id="mode-switch">
+      <button class="mode-btn active" data-mode="visitor">
+        <span class="mode-dot" style="background: var(--arrow-red);"></span>
+        Visitor
+      </button>
+      <button class="mode-btn" data-mode="inspection">
+        <span class="mode-dot" style="background: #1A6FD9;"></span>
+        Inspection &amp; Loading
+      </button>
+    </div>
     <div class="datetime" id="datetime"></div>
     <div class="tab-switch">
       <button class="tab-btn active" data-view="register">Register</button>
@@ -745,14 +813,14 @@
               <label>Department</label>
               <select id="department">
                 <option value="">Select department...</option>
-                <option>Sales</option>
-                <option>Operations</option>
-                <option>Finance</option>
-                <option>IT</option>
-                <option>Procurement</option>
                 <option>Management</option>
-                <option>Warehouse</option>
-                <option>Other</option>
+                <option>Sales</option>
+                <option>Logistics</option>
+                <option>IT</option>
+                <option>QC</option>
+                <option>Accounts</option>
+                <option>Stores</option>
+                <option>Invoices</option>
               </select>
             </div>
 
@@ -863,9 +931,21 @@
   /* =============================================================
      CONFIGURATION
      ============================================================= */
-  const CHECKIN_WEBHOOK  = 'https://n8n.arrowpipes.site/webhook/visitor-checkin';
-  const CHECKOUT_WEBHOOK = 'https://n8n.arrowpipes.site/webhook/visitor-checkout';
-  const LIST_WEBHOOK     = 'https://n8n.arrowpipes.site/webhook/visitor-list';
+  const ENDPOINTS = {
+    visitor: {
+      checkin:  'https://n8n.arrowpipes.site/webhook/visitor-checkin',
+      checkout: 'https://n8n.arrowpipes.site/webhook/visitor-checkout',
+      list:     'https://n8n.arrowpipes.site/webhook/visitor-list'
+    },
+    inspection: {
+      checkin:  'https://n8n.arrowpipes.site/webhook/inspection-checkin',
+      checkout: 'https://n8n.arrowpipes.site/webhook/inspection-checkout',
+      list:     'https://n8n.arrowpipes.site/webhook/inspection-list'
+    }
+  };
+
+  // Current active mode — toggled by the top mode switch
+  let CURRENT_MODE = 'visitor';
 
   /* =============================================================
      Date / time display
@@ -878,6 +958,53 @@
   }
   updateClock();
   setInterval(updateClock, 1000 * 30);
+
+  /* =============================================================
+     Mode switching (Visitor vs Inspection & Loading)
+     ============================================================= */
+  const modeSwitch = document.getElementById('mode-switch');
+  const pageHeading = document.querySelector('#view-register .page-header h2');
+  const checkoutHeading = document.querySelector('#view-checkout .page-header h2');
+  const submitBtnEl = document.getElementById('submit-btn');
+
+  const MODE_LABELS = {
+    visitor: {
+      registerHeading: 'New Visitor Check-in',
+      checkoutHeading: 'Visitors Currently On-site',
+      submitButton:    'Check In Visitor',
+      welcomeGreeting: 'Welcome to Arrow Pipes'
+    },
+    inspection: {
+      registerHeading: 'New Inspection / Loading Entry',
+      checkoutHeading: 'Inspection & Loading Currently On-site',
+      submitButton:    'Check In',
+      welcomeGreeting: 'Inspection & Loading Registered'
+    }
+  };
+
+  function applyMode(mode) {
+    CURRENT_MODE = mode;
+    document.body.classList.toggle('mode-inspection', mode === 'inspection');
+
+    // Update headings and button label
+    const labels = MODE_LABELS[mode];
+    if (pageHeading)    pageHeading.textContent    = labels.registerHeading;
+    if (checkoutHeading) checkoutHeading.textContent = labels.checkoutHeading;
+    if (submitBtnEl)    submitBtnEl.textContent    = labels.submitButton;
+
+    // Refresh visitor list if on checkout view
+    if (viewCheckout.classList.contains('active')) {
+      loadVisitors();
+    }
+  }
+
+  modeSwitch.addEventListener('click', (e) => {
+    const btn = e.target.closest('.mode-btn');
+    if (!btn) return;
+    modeSwitch.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyMode(btn.dataset.mode);
+  });
 
   /* =============================================================
      Tab switching
@@ -928,7 +1055,7 @@
     };
 
     try {
-      const res = await fetch(CHECKIN_WEBHOOK, {
+      const res = await fetch(ENDPOINTS[CURRENT_MODE].checkin, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -948,6 +1075,7 @@
       });
 
       // Populate and show the welcome modal
+      document.querySelector('.welcome-greeting').textContent = MODE_LABELS[CURRENT_MODE].welcomeGreeting;
       document.getElementById('welcome-name').textContent  = visitorNm;
       document.getElementById('welcome-badge').textContent = '#' + badgeNum;
       document.getElementById('welcome-host').textContent  = hostNm || '—';
@@ -1001,7 +1129,7 @@
   async function loadVisitors() {
     visitorRows.innerHTML = '<div class="loading">Loading visitors...</div>';
     try {
-      const res = await fetch(LIST_WEBHOOK);
+      const res = await fetch(ENDPOINTS[CURRENT_MODE].list);
       if (!res.ok) throw new Error('Failed to load');
       currentVisitors = await res.json();
       if (!Array.isArray(currentVisitors)) currentVisitors = [];
@@ -1063,7 +1191,7 @@
     btn.disabled = true;
     btn.textContent = 'Processing...';
     try {
-      const res = await fetch(CHECKOUT_WEBHOOK, {
+      const res = await fetch(ENDPOINTS[CURRENT_MODE].checkout, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ visitorId, checkOutTime: new Date().toISOString() })
