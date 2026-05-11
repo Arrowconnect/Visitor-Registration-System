@@ -1312,6 +1312,17 @@
       </div>
     </div>
 
+    <div class="mode-switch" id="mode-switch-checkout" style="margin-bottom: 20px;">
+      <button class="mode-btn active" data-mode="visitor">
+        <span class="mode-dot" style="background: #C8102E;"></span>
+        Visitor
+      </button>
+      <button class="mode-btn" data-mode="inspection">
+        <span class="mode-dot" style="background: #1A6FD9;"></span>
+        Services
+      </button>
+    </div>
+
     <div class="stats" id="stats">
       <div class="stat-card accent">
         <div class="stat-label">On-site now</div>
@@ -1486,13 +1497,27 @@
     }
   }
 
-  modeSwitch.addEventListener('click', (e) => {
+  const modeSwitchCheckout = document.getElementById('mode-switch-checkout');
+
+  // Sync both mode switches whenever mode changes
+  function syncModeButtons(mode) {
+    [modeSwitch, modeSwitchCheckout].forEach(switchEl => {
+      if (!switchEl) return;
+      switchEl.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
+    });
+  }
+
+  function handleModeSwitch(e) {
     const btn = e.target.closest('.mode-btn');
     if (!btn) return;
-    modeSwitch.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    syncModeButtons(btn.dataset.mode);
     applyMode(btn.dataset.mode);
-  });
+  }
+
+  modeSwitch.addEventListener('click', handleModeSwitch);
+  if (modeSwitchCheckout) modeSwitchCheckout.addEventListener('click', handleModeSwitch);
 
   /* =============================================================
      Host autocomplete — populates datalist, auto-fills dept + email
