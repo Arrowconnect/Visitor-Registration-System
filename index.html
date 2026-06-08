@@ -1254,9 +1254,16 @@
               <label>Yard <span class="req">*</span></label>
               <select id="yard" required>
                 <option value="">Select yard...</option>
-                <option value="North Yard">North Yard (Badges 1–15)</option>
-                <option value="South Yard">South Yard (Badges 16–30)</option>
+                <option value="North Yard" data-yard="north">North Yard</option>
+                <option value="CGG Yard" data-yard="cgg">CGG Yard</option>
+                <option value="South Yard" data-yard="south">South Yard</option>
               </select>
+            </div>
+
+            <div class="field full" id="vehicle-field" style="display:none;">
+              <label>Vehicle No. <span class="req">*</span></label>
+              <input type="text" id="vehicleNumber" autocomplete="off" placeholder="e.g. DXB-A-12345"
+                     pattern="[A-Za-z0-9\- ]+" title="Letters, numbers, hyphens and spaces only">
             </div>
           </div>
 
@@ -1414,7 +1421,7 @@
   let CURRENT_MODE = 'visitor';
 
   /* Employee directory — for host autocomplete */
-  const EMPLOYEES = [{"name":"Naresh Nirmaldas Santani","designation":"Managing Director & CEO","department":"Board of Directors","email":"nns@arrowpipes.com"},{"name":"Karan Nanik Gogia","designation":"CEO","department":"Board of Directors","email":"karan@arrowpipes.com"},{"name":"Jatin Naresh Santani","designation":"CEO - Mezon Stainless Steel","department":"Board of Directors","email":"jatin@arrowpipes.com"},{"name":"Anil Navani","designation":"Joint Managing Director","department":"Management","email":"anil@arrowpipes.com"},{"name":"Dharmendra Santani","designation":"Director - Sales","department":"Management","email":"dvs@arrowpipes.com"},{"name":"Dilip Santani","designation":"Manager - Sales","department":"Management","email":"dilip@arrowpipes.com"},{"name":"Rishi Anil Navani","designation":"Manager - Business Development","department":"Sales","email":"rishi@arrowpipes.com"},{"name":"Sameer Narang Haresh","designation":"Manager - Business Development","department":"Sales","email":"sameer@arrowpipes.com"},{"name":"Karishma Lalwani","designation":"Manager - Commercial (GCC)","department":"Sales","email":"karishma@arrowpipes.com"},{"name":"Jai Lahori","designation":"Manager - Commercial (International)","department":"Sales","email":"jai@arrowpipes.com"},{"name":"Ravi Gogia","designation":"Manager - Distribution Sales","department":"Sales","email":"ravi@arrowpipes.com"},{"name":"Mohit Ladkani","designation":"Assistant Manager - Projects","department":"Sales","email":"mohit@arrowpipes.com"},{"name":"Aashish Nagrani","designation":"Sales","department":"Sales","email":"ashish@arrowpipes.com"},{"name":"Suresh Kumar","designation":"Senior Associate - Sales","department":"Sales","email":"suresh@arrowpipes.com"},{"name":"Sachin Shetye","designation":"Senior Associate - Sales","department":"Sales","email":"sachin@arrowpipes.com"},{"name":"Sareetha George","designation":"Manager - Imports","department":"Procurement","email":"sareetha@arrowpipes.com"},{"name":"Gurpreet  Bedi","designation":"Project Buyer","department":"Procurement","email":"gurpreet@arrowpipes.com"},{"name":"Monisha Palan Madhu","designation":"Imports Co-ordinator","department":"Procurement","email":"monisha@arrowpipes.com"},{"name":"Pankaj Sachdev","designation":"Procurement - Expeditor","department":"Procurement","email":"pcs@arrowpipes.com"},{"name":"Luis Domingos","designation":"Manager - Stores & Expediting","department":"Stores","email":"luis@arrowpipes.com"},{"name":"Ashok Kumar","designation":"Project Expeditor","department":"Stores","email":"ashok@arrowpipes.com"},{"name":"Shailesh Kumar","designation":"Expeditor","department":"Stores","email":"shailesh@arrowpipes.com"},{"name":"Shivkumar Mahendra Prasad","designation":"Expeditor","department":"Stores","email":"shiv@arrowpipes.com"},{"name":"Kritesh Kishor Lokwani","designation":"Expeditor","department":"Stores","email":"kritesh@arrowpipes.com"},{"name":"Sandeep Mahendraprasd Prajapati","designation":"Expeditor","department":"Stores","email":"sandeep@arrowpipes.com"},{"name":"Ravi Sahni","designation":"Expeditor","department":"Stores","email":"ravisahni@arrowpipes.com"},{"name":"Bhavesh Trivedi","designation":"Stores Assistant","department":"Stores","email":"bhavesh@arrowpipes.com"},{"name":"Kishore Hira","designation":"Manager - Finance","department":"Accounts","email":"kishore@arrowpipes.com"},{"name":"Raju Maheshwari","designation":"Assistant Manager - Finance","department":"Accounts","email":"raju@arrowpipes.com"},{"name":"Nitha Mary Varghese","designation":"Senior Accountant","department":"Accounts","email":"nitha@arrowpipes.com"},{"name":"Vikram Shetty","designation":"Financial Accountant","department":"Accounts","email":"vikram@arrowpipes.com"},{"name":"Alysa Claire Salado Dones","designation":"Assistant Accountant","department":"Accounts","email":"claire@arrowpipes.com"},{"name":"Teena Dsouza","designation":"Assistant Accountant","department":"Accounts","email":"teena@arrowpipes.com"},{"name":"Rugmani Manjapra Seshamani","designation":"Logistics Associate","department":"Logistics","email":"rugmani@arrowpipes.com"},{"name":"Jitendra Aswani","designation":"Manager - Logistics (International)","department":"Logistics","email":"jitendra@arrowpipes.com"},{"name":"Saju John","designation":"Manager - Logistics (UAE)","department":"Logistics","email":"saju@arrowpipes.com"},{"name":"Umesh Pathak","designation":"Logistics Officer","department":"Logistics","email":"umesh@arrowpipes.com"},{"name":"Carwan Khurshid","designation":"Logistics Associate","department":"Logistics","email":"carwan@arrowpipes.com"},{"name":"Chandra Prabhu","designation":"Logistics Associate","department":"Logistics","email":"prabhu@arrowpipes.com"},{"name":"Raghu Kothuri","designation":"Logistics Associate","department":"Logistics","email":"raghu@arrowpipes.com"},{"name":"Anusiya Sankarapandian","designation":"Logistics Associate","department":"Logistics","email":"anusiya@arrowpipes.com"},{"name":"Joneth Preselda Laude","designation":"Document Controller","department":"MTC/Document Controller","email":"joneth@arrowpipes.com"},{"name":"Palani Appan","designation":"Manager  - QA/QC","department":"QA/QC","email":"palani@arrowpipes.com"},{"name":"Dilip M","designation":"QA/QC Engineer","department":"QA/QC","email":"dmr@arrowpipes.com"},{"name":"Raja John","designation":"QHSE Officer","department":"QA/QC","email":"raja@arrowpipes.com"},{"name":"Karthick R","designation":"Project QC Engineer","department":"QA/QC","email":"karthick@arrowpipes.com"},{"name":"Ashik Asokan","designation":"QA/QC Engineer","department":"QA/QC","email":"ashik@arrowpipes.com"},{"name":"Janakiraman","designation":"QC Engineer","department":"QA/QC","email":"janakiraman@arrowpipes.com"},{"name":"Ganapathy Melarcode Hariharan","designation":"IT Systems Analyst","department":"IT","email":"ganapathy@arrowpipes.com"},{"name":"Ashwathi","designation":"IT Systems Analyst","department":"IT","email":"ashwathi@arrowpipes.com"},{"name":"Navomi Nixon","designation":"Digital Marketing Analyst","department":"IT","email":"navomi@arrowpipes.com"},{"name":"Gladys Santos","designation":"Front Desk / Receptionist","department":"MTC/Document Controller","email":"zam@arrowpipes.com"}];
+  const EMPLOYEES = [{"name":"Naresh Nirmaldas Santani","designation":"Managing Director & CEO","department":"Board of Directors","email":"nns@arrowpipes.com"},{"name":"Karan Nanik Gogia","designation":"CEO","department":"Board of Directors","email":"karan@arrowpipes.com"},{"name":"Jatin Naresh Santani","designation":"CEO - Mezon Stainless Steel","department":"Board of Directors","email":"jatin@arrowpipes.com"},{"name":"Anil Navani","designation":"Joint Managing Director","department":"Management","email":"anil@arrowpipes.com"},{"name":"Dharmendra Santani","designation":"Director - Sales","department":"Management","email":"dvs@arrowpipes.com"},{"name":"Dilip Santani","designation":"Manager - Sales","department":"Management","email":"dilip@arrowpipes.com"},{"name":"Rishi Anil Navani","designation":"Manager - Business Development","department":"Sales","email":"rishi@arrowpipes.com"},{"name":"Sameer Narang Haresh","designation":"Manager - Business Development","department":"Sales","email":"sameer@arrowpipes.com"},{"name":"Karishma Lalwani","designation":"Manager - Commercial (GCC)","department":"Sales","email":"karishma@arrowpipes.com"},{"name":"Jai Lahori","designation":"Manager - Commercial (International)","department":"Sales","email":"jai@arrowpipes.com"},{"name":"Ravi Gogia","designation":"Manager - Distribution Sales","department":"Sales","email":"ravi@arrowpipes.com"},{"name":"Mohit Ladkani","designation":"Assistant Manager - Projects","department":"Sales","email":"mohit@arrowpipes.com"},{"name":"Aashish Nagrani","designation":"Sales","department":"Sales","email":"ashish@arrowpipes.com"},{"name":"Suresh Kumar","designation":"Senior Associate - Sales","department":"Sales","email":"suresh@arrowpipes.com"},{"name":"Sachin Shetye","designation":"Senior Associate - Sales","department":"Sales","email":"sachin@arrowpipes.com"},{"name":"Sareetha George","designation":"Manager - Imports","department":"Procurement","email":"sareetha@arrowpipes.com"},{"name":"Gurpreet  Bedi","designation":"Project Buyer","department":"Procurement","email":"gurpreet@arrowpipes.com"},{"name":"Monisha Palan Madhu","designation":"Imports Co-ordinator","department":"Procurement","email":"monisha@arrowpipes.com"},{"name":"Pankaj Sachdev","designation":"Procurement - Expeditor","department":"Procurement","email":"pcs@arrowpipes.com","srs":1},{"name":"Luis Domingos","designation":"Manager - Stores & Expediting","department":"Stores","email":"luis@arrowpipes.com","srs":1},{"name":"Ashok Kumar","designation":"Project Expeditor","department":"Stores","email":"ashok@arrowpipes.com","srs":1},{"name":"Shailesh Kumar","designation":"Expeditor","department":"Stores","email":"shailesh@arrowpipes.com","srs":1},{"name":"Shivkumar Mahendra Prasad","designation":"Expeditor","department":"Stores","email":"shiv@arrowpipes.com","srs":1},{"name":"Kritesh Kishor Lokwani","designation":"Expeditor","department":"Stores","email":"kritesh@arrowpipes.com","srs":1},{"name":"Sandeep Mahendraprasd Prajapati","designation":"Expeditor","department":"Stores","email":"sandeep@arrowpipes.com","srs":1},{"name":"Ravi Sahni","designation":"Expeditor","department":"Stores","email":"ravisahni@arrowpipes.com","srs":1},{"name":"Bhavesh Trivedi","designation":"Stores Assistant","department":"Stores","email":"bhavesh@arrowpipes.com","srs":1},{"name":"Kishore Hira","designation":"Manager - Finance","department":"Accounts","email":"kishore@arrowpipes.com"},{"name":"Raju Maheshwari","designation":"Assistant Manager - Finance","department":"Accounts","email":"raju@arrowpipes.com"},{"name":"Nitha Mary Varghese","designation":"Senior Accountant","department":"Accounts","email":"nitha@arrowpipes.com"},{"name":"Vikram Shetty","designation":"Financial Accountant","department":"Accounts","email":"vikram@arrowpipes.com"},{"name":"Alysa Claire Salado Dones","designation":"Assistant Accountant","department":"Accounts","email":"claire@arrowpipes.com"},{"name":"Teena Dsouza","designation":"Assistant Accountant","department":"Accounts","email":"teena@arrowpipes.com"},{"name":"Rugmani Manjapra Seshamani","designation":"Logistics Associate","department":"Logistics","email":"rugmani@arrowpipes.com","srs":1},{"name":"Jitendra Aswani","designation":"Manager - Logistics (International)","department":"Logistics","email":"jitendra@arrowpipes.com","srs":1},{"name":"Saju John","designation":"Manager - Logistics (UAE)","department":"Logistics","email":"saju@arrowpipes.com","srs":1},{"name":"Umesh Pathak","designation":"Logistics Officer","department":"Logistics","email":"umesh@arrowpipes.com","srs":1},{"name":"Carwan Khurshid","designation":"Logistics Associate","department":"Logistics","email":"carwan@arrowpipes.com","srs":1},{"name":"Chandra Prabhu","designation":"Logistics Associate","department":"Logistics","email":"prabhu@arrowpipes.com","srs":1},{"name":"Raghu Kothuri","designation":"Logistics Associate","department":"Logistics","email":"raghu@arrowpipes.com","srs":1},{"name":"Anusiya Sankarapandian","designation":"Logistics Associate","department":"Logistics","email":"anusiya@arrowpipes.com","srs":1},{"name":"Joneth Preselda Laude","designation":"Document Controller","department":"MTC/Document Controller","email":"joneth@arrowpipes.com"},{"name":"Gladys Santos","designation":"Document Controller","department":"MTC/Document Controller","email":"zam@arrowpipes.com"},{"name":"Palani Appan","designation":"Manager  - QA/QC","department":"QA/QC","email":"palani@arrowpipes.com","srs":1},{"name":"Dilip M","designation":"QA/QC Engineer","department":"QA/QC","email":"dmr@arrowpipes.com","srs":1},{"name":"Raja John","designation":"QHSE Officer","department":"QA/QC","email":"raja@arrowpipes.com","srs":1},{"name":"Karthick R","designation":"Project QC Engineer","department":"QA/QC","email":"karthick@arrowpipes.com","srs":1},{"name":"Ashik Asokan","designation":"QA/QC Engineer","department":"QA/QC","email":"ashik@arrowpipes.com","srs":1},{"name":"Janakiraman","designation":"QC Engineer","department":"QA/QC","email":"janakiraman@arrowpipes.com","srs":1},{"name":"Pramesh Lalwani Mirchandani","designation":"Quality Coordinator","department":"QA/QC","email":"pramesh@arrowpipes.com","srs":1},{"name":"Puneet Navani","designation":"","department":"QA/QC","email":"puneet@arrowpipes.com","srs":1},{"name":"Ganapathy Melarcode Hariharan","designation":"IT Systems Analyst","department":"IT","email":"ganapathy@arrowpipes.com","srs":1},{"name":"Ashwathi","designation":"IT Systems Analyst","department":"IT","email":"ashwathi@arrowpipes.com","srs":1},{"name":"Navomi Nixon","designation":"Digital Marketing Analyst","department":"IT","email":"navomi@arrowpipes.com","srs":1},{"name":"Uma Bhavesh Trivedi","designation":"Front Desk / Receptionist","department":"","email":"reception@arrowpipes.com"},{"name":"Bala Prabhakaran Murugan","designation":"Quality Coordinator","department":"QA/QC","email":"bala@arrowpipes.com","srs":1}];
 
   /* =============================================================
      Date / time display
@@ -1450,6 +1457,61 @@
       welcomeGreeting: 'Service Entry Registered'
     }
   };
+
+  // Yard badge ranges per mode (NOT just labels — used for the dropdown text)
+  const YARD_RANGES = {
+    visitor: {
+      'North Yard': '1–10',
+      'CGG Yard':   '11–15',
+      'South Yard': '16–20'
+    },
+    inspection: {
+      'North Yard': '1–5',
+      'CGG Yard':   '6–15',
+      'South Yard': '16–20'
+    }
+  };
+
+  // Refresh the host autocomplete datalist based on the current mode.
+  // In Services mode, only show employees from Logistics/Stores/QA-QC/IT plus Pankaj.
+  function refreshHostDatalist() {
+    if (!hostListEl) return;
+    const list = (CURRENT_MODE === 'inspection')
+      ? EMPLOYEES.filter(e => e.srs)
+      : EMPLOYEES;
+    hostListEl.innerHTML = list
+      .map(e => `<option value="${e.name}"></option>`)
+      .join('');
+  }
+
+  // Toggle the Vehicle No. field. Required only when shown.
+  function refreshVehicleField() {
+    const vehicleField = document.getElementById('vehicle-field');
+    const vehicleInput = document.getElementById('vehicleNumber');
+    if (!vehicleField || !vehicleInput) return;
+
+    const purposeServiceEl = document.getElementById('purposeService');
+    const show = (CURRENT_MODE === 'inspection') && (purposeServiceEl && purposeServiceEl.value === 'Loading');
+    vehicleField.style.display = show ? '' : 'none';
+    if (show) {
+      vehicleInput.setAttribute('required', '');
+    } else {
+      vehicleInput.removeAttribute('required');
+      vehicleInput.value = '';
+    }
+  }
+
+  // Rebuild the yard <option> labels for the current mode's badge ranges.
+  function refreshYardLabels() {
+    const yardSel = document.getElementById('yard');
+    if (!yardSel) return;
+    const ranges = YARD_RANGES[CURRENT_MODE] || YARD_RANGES.visitor;
+    Array.from(yardSel.options).forEach(opt => {
+      if (!opt.value) return; // skip the placeholder
+      const range = ranges[opt.value];
+      if (range) opt.textContent = `${opt.value} (Badges ${range})`;
+    });
+  }
 
   function applyMode(mode) {
     CURRENT_MODE = mode;
@@ -1488,6 +1550,14 @@
       purposeText.removeAttribute('required');
       purposeText.value = '';
     }
+
+    // Mode-aware UI:
+    // - Yard labels (Visitor: 10/5/5  vs  Services: 5/10/5)
+    // - Host autocomplete filtering (Services: only 4 depts + Pankaj)
+    // - Vehicle No. field (Services + Loading)
+    refreshYardLabels();
+    refreshHostDatalist();
+    refreshVehicleField();
 
     // Refresh whichever data view is currently showing
     if (viewCheckout.classList.contains('active')) {
@@ -1533,13 +1603,14 @@
   // but it gets attached to the payload sent to n8n.
   let selectedHostEmail = '';
 
-  // Populate datalist options with "Name — Designation" labels
-  EMPLOYEES.forEach(emp => {
-    const opt = document.createElement('option');
-    opt.value = emp.name;
-    opt.label = emp.designation ? `${emp.designation} · ${emp.department}` : emp.department;
-    hostListEl.appendChild(opt);
-  });
+  // Datalist is now populated dynamically by refreshHostDatalist() — called inside applyMode().
+  // The initial applyMode('visitor') call below will populate it for the first time.
+
+  // Show/hide Vehicle No. when the user picks Loading in Services mode
+  const purposeServiceEl = document.getElementById('purposeService');
+  if (purposeServiceEl) {
+    purposeServiceEl.addEventListener('change', refreshVehicleField);
+  }
 
   function findEmployee(name) {
     const q = (name || '').trim().toLowerCase();
@@ -1736,6 +1807,9 @@
                       ? document.getElementById('purpose').value.trim()
                       : document.getElementById('purposeService').value),
       yard:        document.getElementById('yard').value,
+      vehicleNumber: (CURRENT_MODE === 'inspection'
+                      ? (document.getElementById('vehicleNumber').value || '').trim()
+                      : ''),
       checkInTime: new Date().toISOString(),
       status:      'checked-in'
     };
