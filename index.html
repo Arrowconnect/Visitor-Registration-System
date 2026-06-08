@@ -1225,16 +1225,16 @@
               <label>Department</label>
               <select id="department">
                 <option value="">Select department...</option>
-                <option>Board of Directors</option>
-                <option>Management</option>
-                <option>Sales</option>
-                <option>Logistics</option>
-                <option>Procurement</option>
-                <option>Stores</option>
-                <option>Accounts</option>
-                <option>QA/QC</option>
-                <option>IT</option>
-                <option>MTC/Document Controller</option>
+                <option data-mode="visitor">Board of Directors</option>
+                <option data-mode="visitor">Management</option>
+                <option data-mode="visitor">Sales</option>
+                <option data-mode="visitor inspection">Logistics</option>
+                <option data-mode="visitor inspection">Procurement</option>
+                <option data-mode="visitor inspection">Stores</option>
+                <option data-mode="visitor">Accounts</option>
+                <option data-mode="visitor inspection">QA/QC</option>
+                <option data-mode="visitor inspection">IT</option>
+                <option data-mode="visitor">MTC/Document Controller</option>
               </select>
             </div>
 
@@ -1484,6 +1484,24 @@
       .join('');
   }
 
+  // Show/hide department dropdown options based on the current mode.
+  // Each option carries a data-mode="visitor inspection" attribute listing the modes it's valid for.
+  function refreshDepartmentDropdown() {
+    const deptSel = document.getElementById('department');
+    if (!deptSel) return;
+    Array.from(deptSel.options).forEach(opt => {
+      if (!opt.value) return; // skip the placeholder
+      const allowed = (opt.dataset.mode || '').split(/\s+/);
+      const visible = allowed.includes(CURRENT_MODE);
+      opt.hidden   = !visible;
+      opt.disabled = !visible;
+    });
+    // If the current selection is no longer visible, clear it
+    if (deptSel.selectedOptions[0] && deptSel.selectedOptions[0].hidden) {
+      deptSel.value = '';
+    }
+  }
+
   // Toggle the Vehicle No. field. Required only when shown.
   function refreshVehicleField() {
     const vehicleField = document.getElementById('vehicle-field');
@@ -1554,9 +1572,11 @@
     // Mode-aware UI:
     // - Yard labels (Visitor: 10/5/5  vs  Services: 5/10/5)
     // - Host autocomplete filtering (Services: only 4 depts + Pankaj)
+    // - Department dropdown filtering (Services: only 5 depts)
     // - Vehicle No. field (Services + Loading)
     refreshYardLabels();
     refreshHostDatalist();
+    refreshDepartmentDropdown();
     refreshVehicleField();
 
     // Refresh whichever data view is currently showing
