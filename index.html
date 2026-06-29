@@ -1054,6 +1054,60 @@
     .brand-text h1 { font-size: 19px; }
     .nav-btn { gap: 4px; padding: 9px 6px; font-size: 11px; }
   }
+
+  /* ===== Returning-visitor autocomplete dropdown =====
+     Anchored to its input via .search-wrap wrapper. */
+  .search-wrap { position: relative; }
+  .search-suggest {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0; right: 0;
+    background: #fff;
+    border: 1px solid #d6d6d6;
+    border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 50;
+  }
+  .search-suggest-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .search-suggest-item:last-child { border-bottom: none; }
+  .search-suggest-item:hover,
+  .search-suggest-item.is-active {
+    background: #FBE9EC;
+  }
+  body.mode-inspection .search-suggest-item:hover,
+  body.mode-inspection .search-suggest-item.is-active {
+    background: #E6EFFB;
+  }
+  .search-suggest-item .ss-line1 {
+    font-size: 14px; font-weight: 600; color: #1a1a1a;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  }
+  .search-suggest-item .ss-badge {
+    font-size: 10px; font-weight: 600;
+    color: #C8102E; background: #FBE9EC;
+    padding: 2px 7px; border-radius: 10px;
+    letter-spacing: 0.04em; white-space: nowrap;
+  }
+  body.mode-inspection .search-suggest-item .ss-badge {
+    color: #1A6FD9; background: #E6EFFB;
+  }
+  .search-suggest-item .ss-line2 {
+    font-size: 12px; color: #666;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .search-suggest-empty {
+    padding: 14px; color: #888; font-size: 13px;
+    text-align: center; font-style: italic;
+  }
 </style>
 </head>
 <body>
@@ -1190,7 +1244,10 @@
 
             <div class="field">
               <label>Full Name <span class="req">*</span></label>
-              <input type="text" id="fullName" required autocomplete="off" placeholder="e.g. Ahmed Al Mansoori">
+              <div class="search-wrap">
+                <input type="text" id="fullName" required autocomplete="off" placeholder="e.g. Ahmed Al Mansoori — or type to find a returning visitor">
+                <div class="search-suggest" id="suggest-fullName" hidden></div>
+              </div>
             </div>
 
             <div class="field">
@@ -1200,7 +1257,10 @@
 
             <div class="field">
               <label>Mobile Number <span class="req">*</span></label>
-              <input type="tel" id="mobile" required autocomplete="off" placeholder="+971 50 123 4567">
+              <div class="search-wrap">
+                <input type="tel" id="mobile" required autocomplete="off" placeholder="+971 50 123 4567">
+                <div class="search-suggest" id="suggest-mobile" hidden></div>
+              </div>
             </div>
 
             <div class="field">
@@ -1389,7 +1449,8 @@
       checkin:  'https://n8n.arrowpipes.site/webhook/inspection-checkin',
       checkout: 'https://n8n.arrowpipes.site/webhook/inspection-checkout',
       list:     'https://n8n.arrowpipes.site/webhook/inspection-list'
-    }
+    },
+    search: 'https://n8n.arrowpipes.site/webhook/visitor-search'
   };
 
   // API key for authenticating webhook requests to n8n.
@@ -1665,6 +1726,121 @@
       } else {
         hostHintEl.style.display = 'none';
       }
+    }
+  });
+
+  /* =============================================================
+     Returning-visitor autocomplete
+     - As the receptionist types in Full Name or Mobile, query the search endpoint.
+     - Show matching past visitors with their visit count.
+     - On click → autofill name, company, mobile, email.
+     ============================================================= */
+  const fullNameEl    = document.getElementById('fullName');
+  const mobileEl      = document.getElementById('mobile');
+  const companyEl     = document.getElementById('company');
+  const suggestNameEl = document.getElementById('suggest-fullName');
+  const suggestMobEl  = document.getElementById('suggest-mobile');
+
+  let searchTimer  = null;
+  let activeSearch = null; // AbortController for in-flight requests
+
+  function hideSuggest(el) {
+    if (!el) return;
+    el.hidden = true;
+    el.innerHTML = '';
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
+  function renderSuggestions(suggestEl, results) {
+    if (!suggestEl) return;
+    if (!results || !results.length) {
+      suggestEl.innerHTML = '<div class="search-suggest-empty">No past visitors match — fill the form to register as new.</div>';
+      suggestEl.hidden = false;
+      return;
+    }
+    suggestEl.innerHTML = results.map((r, i) => `
+      <div class="search-suggest-item" data-i="${i}">
+        <div class="ss-line1">
+          <span>${escapeHtml(r.fullName)} — ${escapeHtml(r.company)}</span>
+          <span class="ss-badge">${r.visitCount} visit${r.visitCount === 1 ? '' : 's'}</span>
+        </div>
+        <div class="ss-line2">
+          <span>📱 ${escapeHtml(r.mobile)}</span>
+          ${r.email ? `<span>✉️ ${escapeHtml(r.email)}</span>` : ''}
+          ${r.lastVisit ? `<span>· last visit ${escapeHtml(r.lastVisit)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+    suggestEl.hidden = false;
+
+    // Click to autofill
+    suggestEl.querySelectorAll('.search-suggest-item').forEach(item => {
+      item.addEventListener('mousedown', (e) => {
+        // mousedown (not click) so it fires before the input loses focus
+        e.preventDefault();
+        const r = results[parseInt(item.dataset.i, 10)];
+        if (!r) return;
+        fullNameEl.value = r.fullName;
+        companyEl.value  = r.company;
+        mobileEl.value   = r.mobile;
+        if (r.email) document.getElementById('email').value = r.email;
+        hideSuggest(suggestNameEl);
+        hideSuggest(suggestMobEl);
+      });
+    });
+  }
+
+  async function runSearch(query, suggestEl) {
+    if (activeSearch) activeSearch.abort();
+    activeSearch = new AbortController();
+    try {
+      const url = `${ENDPOINTS.search}?q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, {
+        headers: { 'X-API-Key': API_KEY },
+        signal: activeSearch.signal
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      renderSuggestions(suggestEl, data.results || []);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Visitor search failed:', err);
+        hideSuggest(suggestEl);
+      }
+    }
+  }
+
+  function handleSearchInput(inputEl, suggestEl) {
+    clearTimeout(searchTimer);
+    const q = (inputEl.value || '').trim();
+    // Hide the OTHER suggest panel — only one at a time
+    if (suggestEl === suggestNameEl) hideSuggest(suggestMobEl);
+    else hideSuggest(suggestNameEl);
+
+    if (q.length < 2) { hideSuggest(suggestEl); return; }
+    // Debounce 250ms so we don't fire on every keystroke
+    searchTimer = setTimeout(() => runSearch(q, suggestEl), 250);
+  }
+
+  if (fullNameEl && suggestNameEl) {
+    fullNameEl.addEventListener('input', () => handleSearchInput(fullNameEl, suggestNameEl));
+    fullNameEl.addEventListener('blur',  () => setTimeout(() => hideSuggest(suggestNameEl), 150));
+  }
+  if (mobileEl && suggestMobEl) {
+    mobileEl.addEventListener('input', () => handleSearchInput(mobileEl, suggestMobEl));
+    mobileEl.addEventListener('blur',  () => setTimeout(() => hideSuggest(suggestMobEl), 150));
+  }
+
+  // Hide suggestions when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) {
+      hideSuggest(suggestNameEl);
+      hideSuggest(suggestMobEl);
     }
   });
 
