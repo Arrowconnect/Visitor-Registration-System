@@ -1461,9 +1461,9 @@
   // access to webhooks. Rotate the key by updating both this constant and the n8n credential.
   const API_KEY = 'uYZMjSfTUbYrc5-50l2JonOORV4h8P_7cbWcz5SrDYE';
 
-  // Transitional fallback key — used only during a key rotation so no request fails while
-  // n8n and the deployed frontend are briefly out of sync. Remove once rotation is confirmed.
-  const API_KEY_FALLBACK = 'kwp0rgT9k-DjJjK8nPvXxCjhedL3zC2nVpCM0CRG93U';
+  // Transitional fallback key — set during a key rotation so no request fails while n8n and
+  // the deployed frontend are briefly out of sync. Empty when no rotation is in progress.
+  const API_KEY_FALLBACK = '';
 
   // Core authenticated fetch: sends the primary key, and on an auth rejection (401/403)
   // retries once with the fallback key. This makes key rotation zero-downtime.
