@@ -1459,24 +1459,37 @@
   // Note: this is visible in browser DevTools — that's expected. Real protection comes from
   // CORS lockdown to the Vercel origin + the key itself; together they prevent bot/scraper
   // access to webhooks. Rotate the key by updating both this constant and the n8n credential.
-  const API_KEY = 'kwp0rgT9k-DjJjK8nPvXxCjhedL3zC2nVpCM0CRG93U';
+  const API_KEY = 'uYZMjSfTUbYrc5-50l2JonOORV4h8P_7cbWcz5SrDYE';
+
+  // Transitional fallback key — used only during a key rotation so no request fails while
+  // n8n and the deployed frontend are briefly out of sync. Remove once rotation is confirmed.
+  const API_KEY_FALLBACK = 'kwp0rgT9k-DjJjK8nPvXxCjhedL3zC2nVpCM0CRG93U';
+
+  // Core authenticated fetch: sends the primary key, and on an auth rejection (401/403)
+  // retries once with the fallback key. This makes key rotation zero-downtime.
+  async function authFetch(url, options = {}) {
+    const withKey = (key) => ({
+      ...options,
+      headers: { ...(options.headers || {}), 'X-API-Key': key }
+    });
+    let res = await fetch(url, withKey(API_KEY));
+    if ((res.status === 401 || res.status === 403) && API_KEY_FALLBACK) {
+      res = await fetch(url, withKey(API_KEY_FALLBACK));
+    }
+    return res;
+  }
 
   // Authenticated fetch helpers — use these for all calls to n8n webhooks
   function authPostJson(url, payload) {
-    return fetch(url, {
+    return authFetch(url, {
       method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key':    API_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
   }
 
   function authGet(url) {
-    return fetch(url, {
-      headers: { 'X-API-Key': API_KEY }
-    });
+    return authFetch(url);
   }
 
   // Current active mode — toggled by the top mode switch
@@ -1803,10 +1816,7 @@
     activeSearch = new AbortController();
     try {
       const url = `${ENDPOINTS.search}?q=${encodeURIComponent(query)}`;
-      const res = await fetch(url, {
-        headers: { 'X-API-Key': API_KEY },
-        signal: activeSearch.signal
-      });
+      const res = await authFetch(url, { signal: activeSearch.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       renderSuggestions(suggestEl, data.results || []);
