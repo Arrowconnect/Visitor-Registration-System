@@ -9,7 +9,7 @@
  * Bump VERSION to force cache refresh after any breaking change.
  */
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const CACHE_NAME = `arrow-pipes-${VERSION}`;
 
 // Files worth pre-caching so the app opens even with zero connectivity
