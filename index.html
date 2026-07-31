@@ -1511,8 +1511,6 @@
       <div class="welcome-check">✓</div>
       <div class="welcome-greeting">Welcome to Arrow Pipes</div>
       <div class="welcome-name" id="welcome-name">—</div>
-      <div class="welcome-badge-label">Visitor Badge Number</div>
-      <div class="welcome-badge" id="welcome-badge">—</div>
       <div class="welcome-meta">
         <div class="welcome-meta-row">
           <span class="welcome-meta-label">Host</span>
@@ -2343,7 +2341,6 @@
       let result = {};
       try { result = await res.json(); } catch (e) { result = {}; }
 
-      const badgeNum  = result.badgeNumber || '?';
       const visitorNm = payload.fullName;
       const hostNm    = payload.hostName;
       const timeStr   = new Date().toLocaleTimeString('en-GB', {
@@ -2354,7 +2351,6 @@
       // Populate and show the welcome modal
       document.querySelector('.welcome-greeting').textContent = MODE_LABELS[CURRENT_MODE].welcomeGreeting;
       document.getElementById('welcome-name').textContent  = visitorNm;
-      document.getElementById('welcome-badge').textContent = '#' + badgeNum;
       document.getElementById('welcome-host').textContent  = hostNm || '—';
       document.getElementById('welcome-time').textContent  = timeStr;
       document.getElementById('welcome-modal').classList.add('show');
